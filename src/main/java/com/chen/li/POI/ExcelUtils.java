@@ -1,8 +1,6 @@
 package com.chen.li.POI;
 
 import java.io.File;
-import java.io.IOException;
-import java.io.InputStream;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.math.BigDecimal;
@@ -10,23 +8,19 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.poi.hssf.usermodel.HSSFWorkbook;
 import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.CellType;
 import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Sheet;
 import org.apache.poi.ss.usermodel.Workbook;
 import org.apache.poi.ss.usermodel.WorkbookFactory;
-import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 
 public class ExcelUtils {
-
-    private static final String FULL_DATA_FORMAT = "yyyy/MM/dd  HH:mm:ss";
-    private static final String SHORT_DATA_FORMAT = "yyyy/MM/dd";
+//    private static final String FULL_DATA_FORMAT = "yyyy/MM/dd  HH:mm:ss";
+//    private static final String SHORT_DATA_FORMAT = "yyyy/MM/dd";
  
  
     /**
@@ -56,13 +50,13 @@ public class ExcelUtils {
      * @param in         excel流
      * @param fileName   文件名
      * @param ExcelHeader2BeanFieldNameMappers excel表头与entity属性对应关系
+     * @param errorMessageList 保存excel中的错误信息
      * @param <T>
      * @return
      * @throws Exception
      */
     public static <T> List<T> readExcelToEntity(Class<T> classzz, File file, List<ExcelHeader2BeanFieldNameMapper> ExcelHeader2BeanFieldNameMappers, List<ErrorMessage> errorMessageList) throws Exception {
         checkFile(file.getName());    //是否EXCEL文件
-//        Workbook workbook = getWorkBoot(file); //兼容新老版本
         Workbook workbook = WorkbookFactory.create(file);
         List<T> excelForBeans = readExcel(classzz, workbook, ExcelHeader2BeanFieldNameMappers, errorMessageList);  //解析Excel
         
@@ -103,13 +97,13 @@ public class ExcelUtils {
      * @return
      * @throws IOException
      */
-    private static Workbook getWorkBoot(InputStream in, String fileName) throws IOException {
-        if (fileName.endsWith(".xlsx")) {
-            return new XSSFWorkbook(in);
-        } else {
-            return new HSSFWorkbook(in);
-        }
-    }
+//    private static Workbook getWorkBoot(InputStream in, String fileName) throws IOException {
+//        if (fileName.endsWith(".xlsx")) {
+//            return new XSSFWorkbook(in);
+//        } else {
+//            return new HSSFWorkbook(in);
+//        }
+//    }
     
 //    /**
 //     * 兼容新老版Excel
@@ -146,29 +140,13 @@ public class ExcelUtils {
         int sheetNum = workbook.getNumberOfSheets();
         for (int sheetIndex = 0; sheetIndex < sheetNum; sheetIndex++) {
             Sheet sheet = workbook.getSheetAt(sheetIndex);
-            String sheetName=sheet.getSheetName();
-            int firstRowNum = sheet.getFirstRowNum();
-            int lastRowNum = sheet.getLastRowNum();
-            Row head = sheet.getRow(firstRowNum);
-            if (head == null)
-                continue;
-            short firstCellNum = head.getFirstCellNum();
-            short lastCellNum = head.getLastCellNum();
-//            Field[] fields = classzz.getDeclaredFields();
-            
             
             EgodicRows:
-            for (int rowIndex = firstRowNum + 1; rowIndex <= lastRowNum; rowIndex++) {
-                Row dataRow = sheet.getRow(rowIndex);
+        	for(Row dataRow : sheet) {
                 if (dataRow == null)
                     continue;
                 T instance = classzz.newInstance();
-//                if(CollectionUtils.isEmpty(mappers)){  //非头部映射方式，默认不校验是否为空，提高效率
-                    firstCellNum = dataRow.getFirstCellNum();
-                    lastCellNum = dataRow.getLastCellNum();
-//                }
-//                for (int cellIndex = firstCellNum; cellIndex < lastCellNum; cellIndex++) {
-                
+                    short lastCellNum = dataRow.getLastCellNum();
                 if(dataRow.getLastCellNum() != mappers.size()) {
                 	// TODO 记录错误信息
                 	ErrorMessage errorMessage = new ErrorMessage(dataRow.getRowNum()+1, "The number of column and mapper are not corresponding!");
